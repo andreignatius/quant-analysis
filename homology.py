@@ -28,7 +28,7 @@ r = np.nan_to_num(r)  # Replace NaNs with zero (or you might choose to drop them
 
 # Define and compute Wasserstein distances and permutation entropy
 rips = Rips(maxdim=2)
-w = 30
+w = 20
 n = len(raw_data)-(2*w)+1
 wasserstein_dists = np.zeros((n,1))
 perm_entropy = np.zeros(n)
