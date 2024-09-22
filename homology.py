@@ -32,6 +32,16 @@ w = 20
 n = len(raw_data)-(2*w)+1
 wasserstein_dists = np.zeros((n,1))
 perm_entropy = np.zeros(n)
+hawkes_values = np.zeros(n)
+
+# Define the Hawkes process function
+def hawkes_process(data, decay):
+    alpha = np.exp(-decay)
+    output = np.zeros_like(data)
+    output[0] = data[0]
+    for t in range(1, len(data)):
+        output[t] = alpha * output[t - 1] + (1 - alpha) * data[t]
+    return output
 
 for i in range(n):
     dgm1 = rips.fit_transform(r[i:i+w])
@@ -42,6 +52,7 @@ for i in range(n):
     # Calculate permutation entropy for the window, ensuring data is appropriately shaped
     flat_data = r[i:i+(2*w)+1].flatten()  # Flatten the data
     perm_entropy[i] = weighted_permutation_entropy(flat_data, dx=10, normalized=True)
+    hawkes_values[i] = hawkes_process(flat_data, decay=0.1)[-1]
 
 # Define functions to calculate drawdowns and find peaks
 def calculate_drawdowns(series):
@@ -72,6 +83,7 @@ color = 'tab:red'
 ax2.set_ylabel('Metrics', color=color)
 ax2.plot(raw_data.index[w:n+w], wasserstein_dists, color=color, label='Wasserstein distances')
 ax2.plot(raw_data.index[w:n+w], perm_entropy, color='tab:green', label='Permutation Entropy')
+plt.plot(raw_data.index[w:n+w], hawkes_values, color='orange', label='Hawkes Process Output')
 ax2.tick_params(axis='y', labelcolor=color)
 
 last_marked = None
