@@ -1,9 +1,13 @@
 import polars as pl
 import numpy as np
+import math
+
 import plotly.express as px
 import plotly.io as pio
 import plotly.graph_objects as go
+import plotly.figure_factory as ff
 from plotly.subplots import make_subplots
+
 pio.templates.default = 'plotly_dark'
 
 class risk:
@@ -23,7 +27,7 @@ class risk:
     ) -> pl.DataFrame:
         
         for i in range(self.n):
-            self.var_dict[self.name[i]] = np.percentile(self.returns[i], var_percentile)
+            self.var_dict[self.name[i]] = np.percentile(self.returns[i], 100 - var_percentile)
 
         var_df = (
             pl.from_dict(self.var_dict)
@@ -41,6 +45,7 @@ class risk:
         
     def visualize_returns(
         self, 
+        bins: int,
         title: str,
         n_rows: int, 
         height: int,
@@ -48,8 +53,10 @@ class risk:
     ):
         
         n_rows = n_rows
-        n_cols = int(self.n / n_rows) + 1
+        n_cols = math.ceil(self.n / n_rows)
         var_keys = list(self.var_dict.keys())
+        lower = np.min([np.concatenate([i for i in self.returns])])
+        upper = np.max([np.concatenate([i for i in self.returns])])
 
         fig = make_subplots(
             rows = n_rows, 
@@ -66,7 +73,12 @@ class risk:
                     fig.add_trace(
                         go.Histogram(
                             x = self.returns[index],
-                            marker_color = '#636EFA'
+                            marker_color = '#636EFA',
+                            xbins = dict(
+                                start = lower,
+                                end = upper,
+                                size = bins
+                            )
                         ),
                         row = i + 1,
                         col = j + 1
@@ -84,9 +96,9 @@ class risk:
                     )
 
                     fig.add_vline(
-                        x = -self.var_dict[var_keys[index]],
+                        x = self.var_dict[var_keys[index]],
                         line_color = 'red',
-                        annotation_text = f'Var {"{:.2%}".format(self.var_dict[var_keys[index]])}',
+                        annotation_text = f'VaR {"{:.2%}".format(self.var_dict[var_keys[index]])}',
                         row = i + 1,
                         col = j + 1
                     )
@@ -98,7 +110,13 @@ class risk:
                         col = j + 1
                     )
             
-
+        fig.update_xaxes(
+            range = [
+                lower,
+                upper
+            ]
+        )
+        
         fig.update_layout(
             height = height,
             width = width,
@@ -106,6 +124,26 @@ class risk:
             title_x = 0.5,
             showlegend = False
         )
+        
+        distplot = (
+            ff.create_distplot(
+                self.returns, 
+                self.name, 
+                show_hist = False
+            )
+        )
 
-        return fig
+        distplot.update_xaxes(
+            tickformat = '.0%',
+        )
+
+        distplot.update_layout(
+            height = height,
+            width = width,
+            title = title,
+            title_x = 0.5,
+        )
+        
+        fig.show()
+        distplot.show()
         
