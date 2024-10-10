@@ -303,3 +303,127 @@ class hedging:
         )
         
         return daily_value
+    
+    def bear_put_spread(
+        self,
+        strike2: int
+    ) -> pl.DataFrame:
+        """_summary_
+
+        Parameters
+        ----------
+        strike2 : int
+            option to short, strike2 < self.close
+
+        Returns
+        -------
+        pl.DataFrame
+            value of the legs of the bear put spread
+        """
+        day_option_chain = (
+            self.options
+            .filter(
+                pl.col('date') == self.hedge_date,
+                pl.col('days_to_expiry') > self.min_dte,
+                pl.col('cp_flag') == 'P'
+            )
+        )
+        
+        strike = (
+            self.get_strike(
+                option_chain = day_option_chain,
+                price = self.close
+            )
+        )
+        
+        dte = (
+            self.get_dte(
+                option_chain = day_option_chain,
+                strike = strike
+            )
+        )
+        
+        strike2 = (
+            self.get_strike(
+                option_chain = day_option_chain,
+                price = strike2
+            )
+        )
+        
+        dte2 = (
+            self.get_dte(
+                option_chain = day_option_chain,
+                strike = strike2
+            )
+        )
+        
+        symbol = (
+            self.get_symbol(
+                option_chain = day_option_chain,
+                strike = strike,
+                dte = dte
+            )
+        )
+        
+        symbol2 = (
+            self.get_symbol(
+                option_chain = day_option_chain,
+                strike = strike2,
+                dte = dte2
+            )
+        )
+        
+        long_put = (
+            self.option_value(
+                symbol = symbol
+            )
+            .select(
+                'date', 'strike', 'days_to_expiry', 'best_bid'
+            )
+            .rename(
+                {
+                    'strike' : 'long_strike',
+                    'days_to_expiry' : 'long_days_to_expiry'
+                }
+            )
+        )
+        
+        
+        short_put = (
+            self.option_value(
+                symbol = symbol2
+            )
+            .select(
+                'date', 'strike', 'days_to_expiry', 'best_offer'
+            )
+            .rename(
+                {
+                    'strike' : 'short_strike',
+                    'days_to_expiry' : 'short_days_to_expiry'
+                }
+            )
+        )
+        
+        bear_put_values = (
+            long_put.join(
+                short_put,
+                how = 'left',
+                left_on = 'date',
+                right_on = 'date'
+            )
+        )
+        
+        daily_value = (
+            bear_put_values
+            .with_columns(
+                -pl.col('best_offer') * 100,
+                pl.col('best_bid') * 100,
+                (
+                    (pl.col('best_bid') + pl.col('best_offer')) * 100
+                )
+                .alias('hedge_value')
+            )
+        )
+        
+        return daily_value
+        
