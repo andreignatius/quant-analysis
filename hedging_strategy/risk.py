@@ -64,7 +64,7 @@ class risk:
             shared_xaxes = True,
             vertical_spacing = 0.1,
             subplot_titles = self.name, 
-            )
+        )
 
         for i in range(n_rows):
             for j in range(n_cols):
@@ -144,6 +144,16 @@ class risk:
             title_x = 0.5,
         )
         
+        # Show figures
         fig.show()
         distplot.show()
+        
+        # Save figures as images
+        fig_path = "histogram_plot.png"
+        distplot_path = "distribution_plot.png"
+        pio.write_image(fig, fig_path)
+        pio.write_image(distplot, distplot_path)
+        
+        print(f"Plots saved as '{fig_path}' and '{distplot_path}'")
+
         
