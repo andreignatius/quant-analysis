@@ -101,13 +101,9 @@ class hedging:
         str
             Option symbol
         """
-        return (
-            option_chain.filter(
-                pl.col("strike") == strike, pl.col("days_to_expiry") == dte
-            )
-            .select("symbol")
-            .item()
-        )
+        return option_chain.filter(
+            pl.col("strike") == strike, pl.col("days_to_expiry") == dte
+        ).select("symbol")[0]
 
     def option_value(self, symbol: str) -> pl.DataFrame:
         """
