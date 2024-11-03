@@ -148,20 +148,20 @@ for date, value in sp500_drawdowns.items():
                 if last_peak_date not in marked_DD_dates:
                     marked_DD_dates.append(last_peak_date)
 
-fig.tight_layout()
-plt.title("Homology, Permutation Entropy, and Market Drawdowns with Peaks")
-plt.legend(loc="upper left")
-plt.savefig(
-    "combined_metrics_and_drawdowns.png",
-    dpi="figure",
-    format=None,
-    metadata=None,
-    bbox_inches="tight",
-    pad_inches=0.1,
-    facecolor="white",
-    edgecolor="auto",
-)
-plt.show()
+# fig.tight_layout()
+# plt.title("Homology, Permutation Entropy, and Market Drawdowns with Peaks")
+# plt.legend(loc="upper left")
+# plt.savefig(
+#     "combined_metrics_and_drawdowns.png",
+#     dpi="figure",
+#     format=None,
+#     metadata=None,
+#     bbox_inches="tight",
+#     pad_inches=0.1,
+#     facecolor="white",
+#     edgecolor="auto",
+# )
+# plt.show()
 
 import pandas as pd
 
@@ -247,7 +247,7 @@ def evaluate_predictions(df, predictions, actual_downturn_dates, threshold, wind
     prediction_flags = predictions > threshold
     prediction_dates = prediction_flags[prediction_flags].index
 
-    cool_off_period='60D'
+    cool_off_period='180D'
     cool_off = pd.Timedelta(cool_off_period)
     last_prediction_date = None
     filtered_prediction_dates = []
@@ -263,9 +263,21 @@ def evaluate_predictions(df, predictions, actual_downturn_dates, threshold, wind
     print("prediction_dates: ", prediction_dates)
     print("actual_downturn_dates: ", actual_downturn_dates)
     print("***")
+    for date in prediction_dates:
+        print("predicted date: ", date)
+        ax1.axvline(
+                        x=date,
+                        color="green",
+                        linestyle="--",
+                        linewidth=1.0,
+                        label="Predicted Downturn" if last_marked is None else "",
+                    )
     # Prepare to track hits and false alarms
     hits = 0
     false_alarms = 0
+
+    predict_then_go_down = 0
+    predict_then_go_up = 0
 
     # Buffer period to check for downturn around each prediction
     buffer = timedelta(days=window)
@@ -279,6 +291,35 @@ def evaluate_predictions(df, predictions, actual_downturn_dates, threshold, wind
         else:
             print("prediction_date: ", prediction_date, " MISS")
             false_alarms += 1
+        price_at_prediction     = df["^GSPC"].loc[prediction_date]
+        if (prediction_date + buffer).weekday() < 5:
+            try:
+                price_after_prediction  = df["^GSPC"].loc[prediction_date + buffer]
+            except:
+                try:
+                    price_after_prediction  = df["^GSPC"].loc[prediction_date + buffer + timedelta(days=1)]
+                except:
+                    try:
+                        price_after_prediction  = df["^GSPC"].loc[prediction_date + buffer + timedelta(days=2)]
+                    except:
+                        price_after_prediction  = df["^GSPC"].loc[prediction_date + buffer + timedelta(days=3)]
+        elif (prediction_date + buffer).weekday() == 5:
+            try:
+                price_after_prediction  = df["^GSPC"].loc[prediction_date + buffer + timedelta(days=2)]
+            except:
+                price_after_prediction  = df["^GSPC"].loc[prediction_date + buffer + timedelta(days=3)]
+        elif (prediction_date + buffer).weekday() == 6:
+            try:
+                price_after_prediction  = df["^GSPC"].loc[prediction_date + buffer + timedelta(days=1)]
+            except:
+                price_after_prediction  = df["^GSPC"].loc[prediction_date + buffer + timedelta(days=2)]
+        print("price_at_prediction: ", price_at_prediction)
+        print("price_after_prediction: ", price_after_prediction)
+        if price_after_prediction < price_at_prediction:
+            predict_then_go_down += 1
+        else:
+            predict_then_go_up += 1
+        print("***")
 
     # Calculate precision and recall
     if hits + false_alarms > 0:
@@ -291,7 +332,9 @@ def evaluate_predictions(df, predictions, actual_downturn_dates, threshold, wind
     else:
         recall = 0
 
-    return {'precision': precision, 'recall': recall}
+    simple_dd_accuracy = predict_then_go_down / len(prediction_dates)
+
+    return {'precision': precision, 'recall': recall, 'simple_dd_accuracy': simple_dd_accuracy}
 
 marked_DD_dates = pd.Series(marked_DD_dates)
 print("check marked_DD_dates: ", marked_DD_dates)
@@ -299,12 +342,28 @@ print("check marked_DD_dates: ", marked_DD_dates)
 wasserstein_series = pd.Series(wasserstein_dists.flatten(), index=raw_data.index[w:n+w])
 actual_downturn_dates = pd.Series(df_close.index[sp500_drawdowns < -0.15])  # Assuming significant downturn is defined as -15% drawdown
 
-results = evaluate_predictions(df_close, wasserstein_series, marked_DD_dates, threshold=0.125)
+results = evaluate_predictions(df_close, wasserstein_series, marked_DD_dates, threshold=0.12)
 print("Precision:", results['precision'])
 print("Recall:", results['recall'])
+print("simple_dd_accuracy:", results['simple_dd_accuracy'])
 
 
 
+
+fig.tight_layout()
+plt.title("Homology, Permutation Entropy, and Market Drawdowns with Peaks")
+plt.legend(loc="upper left")
+plt.savefig(
+    "combined_metrics_and_drawdowns.png",
+    dpi="figure",
+    format=None,
+    metadata=None,
+    bbox_inches="tight",
+    pad_inches=0.1,
+    facecolor="white",
+    edgecolor="auto",
+)
+plt.show()
 
 
 
