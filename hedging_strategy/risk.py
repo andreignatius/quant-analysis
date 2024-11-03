@@ -101,7 +101,6 @@ class risk:
             title=title,
             title_x=0.5,
         )
-<<<<<<< HEAD
         
         # Show figures
         fig.show()
@@ -116,8 +115,3 @@ class risk:
         print(f"Plots saved as '{fig_path}' and '{distplot_path}'")
 
         
-=======
-
-        fig.show()
-        distplot.show()
->>>>>>> main
