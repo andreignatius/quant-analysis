@@ -30,6 +30,9 @@ class risk:
             pl.from_dict(self.var_dict)
             .transpose(include_header=True)
             .rename({"column": "strategy", "column_0": f"{var_percentile}_var"})
+            .with_columns(
+                pl.col(f"{var_percentile}_var") * np.sqrt(10)
+            )
         )
         return var_df
 
