@@ -104,7 +104,7 @@ class risk:
             title=title,
             title_x=0.5,
         )
-        
+
         # Show figures
         fig.show()
         distplot.show()
@@ -116,5 +116,3 @@ class risk:
         pio.write_image(distplot, distplot_path)
         
         print(f"Plots saved as '{fig_path}' and '{distplot_path}'")
-
-        
