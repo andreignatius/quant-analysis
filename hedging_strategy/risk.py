@@ -30,6 +30,9 @@ class risk:
             pl.from_dict(self.var_dict)
             .transpose(include_header=True)
             .rename({"column": "strategy", "column_0": f"{var_percentile}_var"})
+            .with_columns(
+                pl.col(f"{var_percentile}_var") * np.sqrt(10)
+            )
         )
         return var_df
 
@@ -101,6 +104,7 @@ class risk:
             title=title,
             title_x=0.5,
         )
+
         # Show figures
         fig.show()
         distplot.show()
@@ -112,5 +116,3 @@ class risk:
         pio.write_image(distplot, distplot_path)
         
         print(f"Plots saved as '{fig_path}' and '{distplot_path}'")
-
-        

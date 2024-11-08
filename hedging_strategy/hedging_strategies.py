@@ -28,7 +28,7 @@ class hedging:
         """
 
         self.hedge_date = pl.lit(hedge_date).str.strptime(pl.Date, "%Y-%m-%d")
-        self.end_date = self.hedge_date + pl.duration(days=holding_period)
+        self.holding_period = holding_period
         self.options = options
         self.min_dte = min_dte
         self.close = close
@@ -121,9 +121,8 @@ class hedging:
         """
         return self.options.filter(
             pl.col("date") >= self.hedge_date,
-            pl.col("date") <= self.end_date,
             pl.col("symbol") == symbol,
-        )
+        )[ : self.holding_period]
 
     def buy_put(self) -> pl.DataFrame:
         """
