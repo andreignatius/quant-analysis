@@ -116,8 +116,8 @@ ax2.tick_params(axis="y", labelcolor=color)
 
 # Draw horizontal line at Wasserstein distance 0.75
 ax2.axhline(y=0.075, color='gray', linestyle='--', linewidth=1.5, label='Threshold at 0.075')
-ax2.axhline(y=0.1, color='gray', linestyle='--', linewidth=1.5, label='Threshold at 0.01')
-ax2.axhline(y=0.125, color='gray', linestyle='--', linewidth=1.5, label='Threshold at 0.0125')
+ax2.axhline(y=0.1, color='gray', linestyle='--', linewidth=1.5, label='Threshold at 0.1')
+ax2.axhline(y=0.125, color='gray', linestyle='--', linewidth=1.5, label='Threshold at 0.125')
 
 
 last_marked = None
@@ -302,7 +302,13 @@ def evaluate_predictions(df, predictions, actual_downturn_dates, threshold, wind
                     try:
                         price_after_prediction  = df["^GSPC"].loc[prediction_date + buffer + timedelta(days=2)]
                     except:
-                        price_after_prediction  = df["^GSPC"].loc[prediction_date + buffer + timedelta(days=3)]
+                        try:
+                            price_after_prediction  = df["^GSPC"].loc[prediction_date + buffer + timedelta(days=3)]
+                        except:
+                            try:
+                                price_after_prediction  = df["^GSPC"].loc[prediction_date + buffer + timedelta(days=4)]
+                            except:
+                                price_after_prediction  = df["^GSPC"].loc[prediction_date + buffer + timedelta(days=5)]
         elif (prediction_date + buffer).weekday() == 5:
             try:
                 price_after_prediction  = df["^GSPC"].loc[prediction_date + buffer + timedelta(days=2)]
